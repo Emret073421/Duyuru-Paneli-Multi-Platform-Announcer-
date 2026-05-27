@@ -1,6 +1,6 @@
 # 📢 Çoklu Kanal Duyuru ve Yayın Sistemi (Multi-Channel Broadcast App)
 
-Bu proje; Android platformu üzerinde modern **Jetpack Compose** ve **Android Architecture Components** kullanılarak geliştirilmiş, tek bir merkezden **Telegram**, **Discord** ve **Slack** kanallarına aynı anda anlık görsel/metinsel duyurular (broadcast) göndermeyi sağlayan profesyonel bir mobil uygulamadır.
+Bu proje; Android platformu üzerinde modern **Jetpack Compose** ve **Android Architecture Components** kullanılarak geliştirilmiş, tek bir merkezden **Telegram** ve **Slack** kanallarına aynı anda anlık görsel/metinsel duyurular (broadcast) göndermeyi sağlayan profesyonel bir mobil uygulamadır.
 
 ---
 
@@ -8,7 +8,6 @@ Bu proje; Android platformu üzerinde modern **Jetpack Compose** ve **Android Ar
 
 1. **Çoklu Platform Desteği (Multi-Platform Broadcast):**
    * **Telegram:** Bot Token ve Chat ID aracılığıyla ister genel (`@kanal_adi`) ister gizli sayısal sohbet odalarına gönderim. Hem metin hem de görsel (URL veya yerel dosya) desteği.
-   * **Discord:** Webhook URL segmenti kullanılarak anlık görsel (embeds veya yerel dosya eki) ve metinsel yayın kontrolü.
    * **Slack:** Webhook API entegrasyonu ile zengin içerikli **Block Kit** mesaj gönderimi.
 
 2. **Dinamik Görsel/Medya Gönderimi (Rich Media Attachments):**

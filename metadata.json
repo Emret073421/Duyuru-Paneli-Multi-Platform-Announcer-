@@ -1,6 +1,6 @@
 {
-  "name": "Duyuru Paneli",
-  "description": "Telegram, Discord ve Slack gibi platformlara aynı anda, tek bir panelden duyuru göndermeyi sağlayan mobil uygulama.",
+  "name": "HadiPaylaş",
+  "description": "Telegram ve Slack gibi platformlara aynı anda, tek bir panelden duyuru göndermeyi sağlayan mobil uygulama.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

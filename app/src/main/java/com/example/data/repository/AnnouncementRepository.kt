@@ -60,14 +60,6 @@ class AnnouncementRepository(
                         photoBytes = photoBytes
                     )
                 }
-                "Discord" -> {
-                    broadcastService.sendDiscord(
-                        webhookUrl = channel.webhookUrl,
-                        message = message,
-                        photoUrl = photoUrl,
-                        photoBytes = photoBytes
-                    )
-                }
                 "Slack" -> {
                     broadcastService.sendSlack(
                         webhookUrl = channel.webhookUrl,
@@ -112,10 +104,6 @@ class AnnouncementRepository(
      */
     suspend fun testTelegram(token: String, chatId: String): ServiceResult {
         return broadcastService.sendTelegram(token, chatId, "OmniAnnounce Test: Telegram bağlantısı sorunsuz!")
-    }
-
-    suspend fun testDiscord(url: String): ServiceResult {
-        return broadcastService.sendDiscord(url, "OmniAnnounce Test: Discord bağlantısı sorunsuz!")
     }
 
     suspend fun testSlack(url: String): ServiceResult {

@@ -122,58 +122,6 @@ class BroadcastService {
     }
 
     /**
-     * Discord Webhook API kullanarak zengin içerikli duyuru gönderir.
-     * Yerel görseller için multipart/form-data yüklemesi yapar, internet linkleri için embeds şeması kurar.
-     */
-    suspend fun sendDiscord(
-        webhookUrl: String, 
-        message: String,
-        photoUrl: String? = null,
-        photoBytes: ByteArray? = null
-    ): ServiceResult = withContext(Dispatchers.IO) {
-        if (webhookUrl.isBlank() || !webhookUrl.startsWith("http")) {
-            return@withContext ServiceResult.Failure("Geçersiz Discord Webhook URL segmenti")
-        }
-
-        val request = if (photoBytes != null) {
-            // Yerel Görsel Yükleme (Multipart form-data)
-            val payloadJson = """{"content": "${escapeForJson(message)}"}"""
-            val multipartBody = MultipartBody.Builder()
-                .setType(MultipartBody.FORM)
-                .addFormDataPart("payload_json", payloadJson)
-                .addFormDataPart("file", "announcement_image.jpg", photoBytes.toRequestBody("image/*".toMediaType()))
-                .build()
-
-            Request.Builder().url(webhookUrl.trim()).post(multipartBody).build()
-        } else if (photoUrl != null && photoUrl.isNotBlank()) {
-            // Embeds ile Görsel URL İliştirme (JSON)
-            val jsonPayload = """{"content": "${escapeForJson(message)}", "embeds": [{"image": {"url": "${escapeForJson(photoUrl)}"}}]}"""
-            Request.Builder().url(webhookUrl.trim()).post(jsonPayload.toRequestBody(jsonMediaType)).build()
-        } else {
-            // Sadece Düz Metin Gönderimi (JSON)
-            val jsonPayload = """{"content": "${escapeForJson(message)}"}"""
-            Request.Builder().url(webhookUrl.trim()).post(jsonPayload.toRequestBody(jsonMediaType)).build()
-        }
-
-        try {
-            retryOnNetworkFailure {
-                client.newCall(request).execute().use { response ->
-                    if (response.isSuccessful || response.code == 204) {
-                        ServiceResult.Success("Discord: Gönderildi (Kod: ${response.code})")
-                    } else {
-                        val errorBody = response.body?.string() ?: "Boş hata gövdesi"
-                        ServiceResult.Failure("Discord API Hatası (Kod ${response.code}): $errorBody")
-                    }
-                }
-            }
-        } catch (e: IOException) {
-            ServiceResult.Failure("Discord Webhook Bağlantı/Zaman Aşımı Hatası: ${e.localizedMessage} (VPN bağlantısını veya Webhook adresinizi kontrol edin)")
-        } catch (e: Exception) {
-            ServiceResult.Failure("Discord Hatası: ${e.localizedMessage}")
-        }
-    }
-
-    /**
      * Slack Webhook API kullanarak yapılandırılmış Block Kit mesajı gönderir.
      * Not: Slack Webhook doğrudan yerel çok parçalı (multipart) dosya yüklemeyi desteklemez,
      * ancak web üzerindeki bir resim adresini (block-kit) harika şekilde sunar.

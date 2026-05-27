@@ -31,7 +31,6 @@ class GreetingScreenshotTest {
       MyApplicationTheme { 
         Column(modifier = Modifier.padding(16.dp)) {
           ChannelBadge(name = "Telegram", enabled = true, color = Color(0xFF229ED9))
-          ChannelBadge(name = "Discord", enabled = true, color = Color(0xFF5865F2))
           ChannelBadge(name = "Slack", enabled = false, color = Color(0xFFE01E5A))
         }
       } 

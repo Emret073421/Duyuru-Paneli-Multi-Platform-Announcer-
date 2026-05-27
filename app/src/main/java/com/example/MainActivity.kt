@@ -27,7 +27,7 @@ import com.example.ui.viewmodel.AnnouncementViewModelFactory
  *
  * VERİ NEREDEN GELİYOR VE APİ ETKİLEŞİMİ:
  * - Oda Tanımları ve Mesaj Geçmişi: Yerel SQLite veritabanından (Room kütüphanesi).
- * - Dış Servisler (Telegram, Discord, Slack): Doğrudan REST API ve Webhook üzerinden BroadcastService sınıfı aracılığıyla beslenir.
+ * - Dış Servisler (Telegram, Slack): Doğrudan REST API ve Webhook üzerinden BroadcastService sınıfı aracılığıyla beslenir.
  */
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {

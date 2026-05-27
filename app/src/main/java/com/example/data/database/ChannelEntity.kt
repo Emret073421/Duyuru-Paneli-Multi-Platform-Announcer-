@@ -7,11 +7,11 @@ import androidx.room.PrimaryKey
 data class ChannelEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val name: String,
-    val platformType: String, // "Telegram", "Discord", "Slack"
+    val platformType: String, // "Telegram", "Slack"
     val isEnabled: Boolean = true,
     // Telecom Token / ChatID
     val telegramToken: String = "",
     val telegramChatId: String = "",
-    // Discord or Slack Webhook URL
+    // Slack Webhook URL
     val webhookUrl: String = ""
 )

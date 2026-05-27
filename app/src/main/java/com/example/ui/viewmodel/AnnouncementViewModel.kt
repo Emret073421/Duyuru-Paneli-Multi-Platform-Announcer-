@@ -170,22 +170,6 @@ class AnnouncementViewModel(private val repository: AnnouncementRepository) : Vi
         }
     }
 
-    fun testDiscordConnection(webhookUrl: String) {
-        _uiState.update { it.copy(isTesting = true, testResult = null) }
-        viewModelScope.launch {
-            val res = repository.testDiscord(webhookUrl)
-            _uiState.update { state ->
-                state.copy(
-                    isTesting = false,
-                    testResult = when (res) {
-                        is ServiceResult.Success -> "Discord Test Başarılı!"
-                        is ServiceResult.Failure -> "Hata: ${res.error}"
-                    }
-                )
-            }
-        }
-    }
-
     fun testSlackConnection(webhookUrl: String) {
         _uiState.update { it.copy(isTesting = true, testResult = null) }
         viewModelScope.launch {
