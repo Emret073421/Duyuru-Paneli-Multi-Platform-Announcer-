@@ -13,6 +13,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,6 +29,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
@@ -47,17 +54,27 @@ import com.example.ui.viewmodel.AnnouncementViewModel
  * 3. HistoryTab (Yayın Geçmişi): Gönderilmiş olan eski duyuru kayıtlarını ve gönderim sonuç raporlarını SQLite listesi olarak sunar.
  */
 enum class Screen(val title: String, val icon: ImageVector) {
-    BROADCAST("Duyuru Gönder", Icons.Default.Send),
+    BROADCAST("Duyuru Gönder", Icons.AutoMirrored.Filled.Send),
     INTEGRATION("Sohbet Ekle/Ayarlar", Icons.Default.Settings)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainAppScreen(viewModel: AnnouncementViewModel, modifier: Modifier = Modifier) {
-    val channels by viewModel.channels.collectAsStateWithLifecycle()
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var showSplash by remember { mutableStateOf(true) }
 
-    var currentScreen by remember { mutableStateOf(Screen.BROADCAST) }
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(2200L)
+        showSplash = false
+    }
+
+    if (showSplash) {
+        SplashScreen()
+    } else {
+        val channels by viewModel.channels.collectAsStateWithLifecycle()
+        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+        var currentScreen by remember { mutableStateOf(Screen.BROADCAST) }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -178,6 +195,140 @@ fun MainAppScreen(viewModel: AnnouncementViewModel, modifier: Modifier = Modifie
                     ) {
                         Text("Kapat")
                     }
+                }
+            }
+        }
+    }
+}
+}
+
+@Composable
+fun SplashScreen() {
+    // Background gradient matching the premium brand colors
+    val backgroundBrush = Brush.linearGradient(
+        colors = listOf(
+            Color(0xFFFCFEFF),
+            Color(0xFFF0F5FF),
+            Color(0xFFE3EDFD)
+        )
+    )
+
+    // Logo pulsing scale animation for a living look
+    val infiniteTransition = rememberInfiniteTransition(label = "LogoPulse")
+    val logoScale by infiniteTransition.animateFloat(
+        initialValue = 1.0f,
+        targetValue = 1.05f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1400, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "ScaleSweep"
+    )
+
+    // State for staggered texts fade-in
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        visible = true
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(backgroundBrush),
+        contentAlignment = Alignment.Center
+    ) {
+        // Decorative background elements representing the smooth visual waves in the brand asset
+        Box(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .size(260.dp)
+                    .offset(x = (-60).dp, y = (-60).dp)
+                    .background(Color(0x0A8E2DE2), CircleShape)
+            )
+            Box(
+                modifier = Modifier
+                    .size(310.dp)
+                    .align(Alignment.BottomEnd)
+                    .offset(x = 90.dp, y = 90.dp)
+                    .background(Color(0x0600E676), CircleShape)
+            )
+        }
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(24.dp)
+        ) {
+            // Elegant centered circle logo container
+            Surface(
+                modifier = Modifier
+                    .size(160.dp)
+                    .graphicsLayer {
+                        scaleX = logoScale
+                        scaleY = logoScale
+                    },
+                shape = CircleShape,
+                color = Color.White,
+                shadowElevation = 10.dp,
+                tonalElevation = 4.dp
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        Image(
+                            painter = painterResource(id = com.example.R.drawable.ic_launcher_background),
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                        Image(
+                            painter = painterResource(id = com.example.R.drawable.ic_launcher_foreground),
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(36.dp))
+
+            // Text animations
+            AnimatedVisibility(
+                visible = visible,
+                enter = fadeIn(animationSpec = tween(900)) + expandVertically(animationSpec = tween(900)),
+                exit = fadeOut()
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    // App brand name
+                    Text(
+                        text = "haydi paylaş",
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1E355B), // Elegant brand blue-slate text color
+                        textAlign = TextAlign.Center
+                    )
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    // App description
+                    Text(
+                        text = "Çoklu Sohbet Odası Yayıncı Paneli",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF6B7A99),
+                        textAlign = TextAlign.Center
+                    )
+                    
+                    Spacer(modifier = Modifier.height(32.dp))
+                    
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.5.dp,
+                        color = Color(0xFF3A7BD5)
+                    )
                 }
             }
         }
@@ -929,7 +1080,7 @@ fun BroadcastTab(
                     Spacer(modifier = Modifier.width(12.dp))
                     Text("Paylaşılıyor...", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 } else {
-                    Icon(Icons.Default.Send, contentDescription = null)
+                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null)
                     Spacer(modifier = Modifier.width(12.dp))
                     Text("Seçilen Sohbetlerde Yayınla", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
