@@ -19,21 +19,22 @@ sealed class ServiceResult {
     data class Failure(val error: String) : ServiceResult()
 }
 
-class BroadcastService {
-    // 30 saniyelik geniş zaman aşımı oranları ve VPN kopmalarına karşı otomatik deneme desteği
-    private val client = OkHttpClient.Builder()
+open class BroadcastService(
+    private val client: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .writeTimeout(30, TimeUnit.SECONDS)
         .retryOnConnectionFailure(true)
-        .build()
+        .build(),
+    private val telegramBaseUrl: String = "https://api.telegram.org"
+) {
 
     private val jsonMediaType = "application/json; charset=utf-8".toMediaType()
 
     /**
      * Payload içindeki özel karakterleri JSON standartlarına uygun şekilde kaçış karakteri (escape) ile temizler.
      */
-    private fun escapeForJson(text: String): String {
+    internal fun escapeForJson(text: String): String {
         return text.replace("\\", "\\\\")
             .replace("\"", "\\\"")
             .replace("\n", "\\n")
@@ -65,7 +66,7 @@ class BroadcastService {
      * Telegram Bot API kullanarak mesaj gönderir.
      * Hem sadece metin (sendMessage), hem de resim (sendPhoto - URL veya Yerel Dosya) yöntemlerini destekler.
      */
-    suspend fun sendTelegram(
+    open suspend fun sendTelegram(
         token: String, 
         chatId: String, 
         message: String,
@@ -78,9 +79,9 @@ class BroadcastService {
 
         val hasPhoto = (photoUrl != null && photoUrl.isNotBlank()) || photoBytes != null
         val url = if (hasPhoto) {
-            "https://api.telegram.org/bot${token.trim()}/sendPhoto"
+            "${telegramBaseUrl}/bot${token.trim()}/sendPhoto"
         } else {
-            "https://api.telegram.org/bot${token.trim()}/sendMessage"
+            "${telegramBaseUrl}/bot${token.trim()}/sendMessage"
         }
 
         val request = if (photoBytes != null) {
@@ -126,7 +127,7 @@ class BroadcastService {
      * Not: Slack Webhook doğrudan yerel çok parçalı (multipart) dosya yüklemeyi desteklemez,
      * ancak web üzerindeki bir resim adresini (block-kit) harika şekilde sunar.
      */
-    suspend fun sendSlack(
+    open suspend fun sendSlack(
         webhookUrl: String, 
         message: String,
         photoUrl: String? = null,
