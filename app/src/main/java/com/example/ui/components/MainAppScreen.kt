@@ -760,7 +760,7 @@ fun BroadcastTab(
                                                             )
                                                             Spacer(modifier = Modifier.height(2.dp))
                                                             Text(
-                                                                text = "Webhook: ${channel.webhookUrl.take(40)}...",
+                                                                text = if (channel.platformType == "Telegram") "ID: ${channel.telegramChatId}" else "Webhook: •••••",
                                                                 fontSize = 11.sp,
                                                                 color = Color.White.copy(alpha = 0.7f)
                                                             )
@@ -1732,7 +1732,7 @@ fun SavedChannelCard(
                 Text(text = "ID: ${channel.telegramChatId}", fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f))
                 Text(text = "Token: •••••", fontSize = 11.sp, color = Color.White.copy(alpha = 0.5f))
             } else {
-                Text(text = "Web Hook: ${channel.webhookUrl.take(45)}...", fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f))
+                Text(text = "Webhook: •••••", fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f))
             }
 
             Spacer(modifier = Modifier.height(6.dp))
