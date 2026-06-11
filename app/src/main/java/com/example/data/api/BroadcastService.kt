@@ -8,6 +8,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
+import java.net.URI
 import java.util.concurrent.TimeUnit
 
 /**
@@ -76,6 +77,14 @@ class BroadcastService {
             return@withContext ServiceResult.Failure("Eksik Telegram parametreleri (Bot Token veya Chat ID)")
         }
 
+        if (!token.trim().matches(Regex("^[0-9]+:[A-Za-z0-9_-]+$"))) {
+            return@withContext ServiceResult.Failure("Geçersiz Telegram Bot Token biçimi")
+        }
+
+        if (photoUrl != null && photoUrl.isNotBlank() && !photoUrl.trim().startsWith("https://")) {
+            return@withContext ServiceResult.Failure("Görsel URL'si yalnızca https:// ile başlamalıdır")
+        }
+
         val hasPhoto = (photoUrl != null && photoUrl.isNotBlank()) || photoBytes != null
         val url = if (hasPhoto) {
             "https://api.telegram.org/bot${token.trim()}/sendPhoto"
@@ -132,8 +141,13 @@ class BroadcastService {
         photoUrl: String? = null,
         photoBytes: ByteArray? = null
     ): ServiceResult = withContext(Dispatchers.IO) {
-        if (webhookUrl.isBlank() || !webhookUrl.startsWith("http")) {
-            return@withContext ServiceResult.Failure("Geçersiz Slack Webhook URL segmenti")
+        if (webhookUrl.isBlank() || !webhookUrl.startsWith("https://")) {
+            return@withContext ServiceResult.Failure("Slack Webhook URL'si https:// ile başlamalıdır")
+        }
+
+        val parsedHost = try { URI(webhookUrl.trim()).host } catch (_: Exception) { null }
+        if (parsedHost == null || !parsedHost.endsWith("slack.com")) {
+            return@withContext ServiceResult.Failure("Slack Webhook URL'si yalnızca hooks.slack.com alan adını kabul eder")
         }
 
         val jsonPayload = if (photoUrl != null && photoUrl.isNotBlank()) {
