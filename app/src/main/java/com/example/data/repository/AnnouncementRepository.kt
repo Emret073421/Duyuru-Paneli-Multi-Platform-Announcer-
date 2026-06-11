@@ -6,6 +6,7 @@ import com.example.data.database.AnnouncementDao
 import com.example.data.database.AnnouncementEntity
 import com.example.data.database.ChannelDao
 import com.example.data.database.ChannelEntity
+import android.util.Log
 import kotlinx.coroutines.flow.Flow
 
 class AnnouncementRepository(
@@ -43,7 +44,11 @@ class AnnouncementRepository(
                 message = message,
                 resultSummary = "Hiçbir hedef kanal seçilmedi."
             )
-            announcementDao.insertAnnouncement(log)
+            try {
+                announcementDao.insertAnnouncement(log)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to insert empty-channel announcement log", e)
+            }
             return log
         }
 
@@ -95,7 +100,11 @@ class AnnouncementRepository(
             resultSummary = dynamicSummary
         )
 
-        announcementDao.insertAnnouncement(log)
+        try {
+            announcementDao.insertAnnouncement(log)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to persist announcement log to database", e)
+        }
         return log
     }
 
@@ -108,5 +117,9 @@ class AnnouncementRepository(
 
     suspend fun testSlack(url: String): ServiceResult {
         return broadcastService.sendSlack(url, "OmniAnnounce Test: Slack bağlantısı sorunsuz!")
+    }
+
+    companion object {
+        private const val TAG = "AnnouncementRepository"
     }
 }
