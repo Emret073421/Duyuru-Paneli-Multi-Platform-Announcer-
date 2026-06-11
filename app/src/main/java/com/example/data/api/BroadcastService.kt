@@ -41,9 +41,6 @@ class BroadcastService {
             .replace("\t", "\\t")
     }
 
-    /**
-     * VPN gibi kararsız ağ durumlarında isteği logaritmik katlanan bekleme süresiyle 3 kez yeniden dener.
-     */
     private suspend fun <T> retryOnNetworkFailure(block: suspend () -> T): T {
         var lastException: Exception? = null
         var delayMs = 1000L
@@ -59,6 +56,25 @@ class BroadcastService {
             }
         }
         throw lastException ?: IOException("Bilinmeyen ağ hatası")
+    }
+
+    private suspend fun executeRequest(request: Request, platformName: String): ServiceResult {
+        return try {
+            retryOnNetworkFailure {
+                client.newCall(request).execute().use { response ->
+                    if (response.isSuccessful) {
+                        ServiceResult.Success("$platformName: Gönderildi (Kod: ${response.code})")
+                    } else {
+                        val errorBody = response.body?.string() ?: "Boş hata gövdesi"
+                        ServiceResult.Failure("$platformName API Hatası (Kod ${response.code}): $errorBody")
+                    }
+                }
+            }
+        } catch (e: IOException) {
+            ServiceResult.Failure("$platformName Bağlantı/Zaman Aşımı Hatası: ${e.localizedMessage} (VPN bağlantısını kontrol edin)")
+        } catch (e: Exception) {
+            ServiceResult.Failure("$platformName Hatası: ${e.localizedMessage}")
+        }
     }
 
     /**
@@ -103,22 +119,7 @@ class BroadcastService {
             Request.Builder().url(url).post(jsonPayload.toRequestBody(jsonMediaType)).build()
         }
 
-        try {
-            retryOnNetworkFailure {
-                client.newCall(request).execute().use { response ->
-                    if (response.isSuccessful) {
-                        ServiceResult.Success("Telegram: Gönderildi (Kod: ${response.code})")
-                    } else {
-                        val errorBody = response.body?.string() ?: "Boş hata gövdesi"
-                        ServiceResult.Failure("Telegram API Hatası (Kod ${response.code}): $errorBody")
-                    }
-                }
-            }
-        } catch (e: IOException) {
-            ServiceResult.Failure("Telegram Bağlantı/Zaman Aşımı Hatası: ${e.localizedMessage} (VPN bağlantısını kontrol edin veya tekrar deneyin)")
-        } catch (e: Exception) {
-            ServiceResult.Failure("Telegram Hatası: ${e.localizedMessage}")
-        }
+        executeRequest(request, "Telegram")
     }
 
     /**
@@ -165,21 +166,6 @@ class BroadcastService {
             .post(jsonPayload.toRequestBody(jsonMediaType))
             .build()
 
-        try {
-            retryOnNetworkFailure {
-                client.newCall(request).execute().use { response ->
-                    if (response.isSuccessful) {
-                        ServiceResult.Success("Slack: Gönderildi (Kod: ${response.code})")
-                    } else {
-                        val errorBody = response.body?.string() ?: "Boş hata gövdesi"
-                        ServiceResult.Failure("Slack API Hatası (Kod ${response.code}): $errorBody")
-                    }
-                }
-            }
-        } catch (e: IOException) {
-            ServiceResult.Failure("Slack Webhook Bağlantı/Zaman Aşımı Hatası: ${e.localizedMessage} (VPN bağlantısını kontrol edin)")
-        } catch (e: Exception) {
-            ServiceResult.Failure("Slack Hatası: ${e.localizedMessage}")
-        }
+        executeRequest(request, "Slack")
     }
 }

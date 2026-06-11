@@ -40,6 +40,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.example.data.database.AnnouncementEntity
 import com.example.data.database.ChannelEntity
+import com.example.ui.components.shared.ExpandablePlatformGroup
+import com.example.ui.components.shared.PlatformColors
+import com.example.ui.components.shared.SettingsExpandablePlatformGroup
+import com.example.ui.components.shared.primaryBroadcastCardColors
+import com.example.ui.components.shared.whiteOnPrimaryTextFieldColors
 import com.example.ui.viewmodel.AnnouncementViewModel
 
 /**
@@ -396,10 +401,7 @@ fun BroadcastTab(
         Card(
             modifier = Modifier.fillMaxWidth(),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = Color.White
-            )
+            colors = primaryBroadcastCardColors()
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Column(
@@ -527,14 +529,7 @@ fun BroadcastTab(
                                 }
                             }
                         },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
-                            focusedBorderColor = Color.White,
-                            unfocusedBorderColor = Color.White.copy(alpha = 0.4f),
-                            focusedContainerColor = Color.White.copy(alpha = 0.1f),
-                            unfocusedContainerColor = Color.White.copy(alpha = 0.05f)
-                        )
+                        colors = whiteOnPrimaryTextFieldColors()
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -550,7 +545,6 @@ fun BroadcastTab(
                                 .padding(vertical = 16.dp)
                         )
                     } else {
-                        // Group channels by their platform types
                         val telegramChannels = filteredChannels.filter { it.platformType == "Telegram" }
                         val slackChannels = filteredChannels.filter { it.platformType == "Slack" }
 
@@ -559,219 +553,27 @@ fun BroadcastTab(
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             if (telegramChannels.isNotEmpty()) {
-                                Column(modifier = Modifier.fillMaxWidth()) {
-                                    val selectedTelegramCount = telegramChannels.count { selectedIds.contains(it.id) }
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clickable { isTelegramExpanded = !isTelegramExpanded }
-                                            .padding(vertical = 8.dp, horizontal = 4.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            DynamicPlatformBadge(platform = "Telegram")
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text(
-                                                text = "Telegram Odaları (${telegramChannels.size})",
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 14.sp,
-                                                color = Color.White
-                                            )
-                                            if (selectedTelegramCount > 0) {
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                Surface(
-                                                    shape = RoundedCornerShape(12.dp),
-                                                    color = Color.White.copy(alpha = 0.2f)
-                                                ) {
-                                                    Text(
-                                                        text = "$selectedTelegramCount seçili",
-                                                        fontSize = 10.sp,
-                                                        fontWeight = FontWeight.SemiBold,
-                                                        color = Color.White,
-                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                                    )
-                                                }
-                                            }
-                                        }
-                                        Icon(
-                                            imageVector = if (isTelegramExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                                            contentDescription = if (isTelegramExpanded) "Daralt" else "Genişlet",
-                                            tint = Color.White,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                    }
-
-                                    AnimatedVisibility(
-                                        visible = isTelegramExpanded,
-                                        enter = expandVertically() + fadeIn(),
-                                        exit = shrinkVertically() + fadeOut()
-                                    ) {
-                                        Column(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(top = 4.dp, bottom = 8.dp),
-                                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                                        ) {
-                                            telegramChannels.forEach { channel ->
-                                                val isSelected = selectedIds.contains(channel.id)
-                                                Surface(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .clickable { viewModel.toggleChannelSelection(channel.id) },
-                                                    shape = RoundedCornerShape(8.dp),
-                                                    color = if (isSelected) Color.White.copy(alpha = 0.25f) else Color.White.copy(alpha = 0.08f),
-                                                    border = androidx.compose.foundation.BorderStroke(
-                                                        width = 1.dp,
-                                                        color = if (isSelected) Color.White else Color.White.copy(alpha = 0.15f)
-                                                    )
-                                                ) {
-                                                    Row(
-                                                        modifier = Modifier
-                                                            .fillMaxWidth()
-                                                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                                                        verticalAlignment = Alignment.CenterVertically
-                                                    ) {
-                                                        Checkbox(
-                                                            checked = isSelected,
-                                                            onCheckedChange = { viewModel.toggleChannelSelection(channel.id) },
-                                                            modifier = Modifier.testTag("checkbox_${channel.id}"),
-                                                            colors = CheckboxDefaults.colors(
-                                                                checkedColor = Color.White,
-                                                                uncheckedColor = Color.White.copy(alpha = 0.6f),
-                                                                checkmarkColor = MaterialTheme.colorScheme.primary
-                                                            )
-                                                        )
-                                                        Spacer(modifier = Modifier.width(8.dp))
-                                                        Column(modifier = Modifier.weight(1f)) {
-                                                            Text(
-                                                                text = channel.name,
-                                                                fontWeight = FontWeight.Bold,
-                                                                fontSize = 14.sp,
-                                                                color = Color.White
-                                                            )
-                                                            Spacer(modifier = Modifier.height(2.dp))
-                                                            Text(
-                                                                text = "Telegram Chat ID: ${channel.telegramChatId}",
-                                                                fontSize = 11.sp,
-                                                                color = Color.White.copy(alpha = 0.7f)
-                                                            )
-                                                        }
-                                                        DynamicPlatformBadge(platform = channel.platformType)
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
+                                ExpandablePlatformGroup(
+                                    platformName = "Telegram",
+                                    channels = telegramChannels,
+                                    selectedIds = selectedIds,
+                                    isExpanded = isTelegramExpanded,
+                                    onToggleExpand = { isTelegramExpanded = !isTelegramExpanded },
+                                    onToggleChannel = { viewModel.toggleChannelSelection(it) },
+                                    channelSubtitle = { "Telegram Chat ID: ${it.telegramChatId}" }
+                                )
                             }
 
                             if (slackChannels.isNotEmpty()) {
-                                Column(modifier = Modifier.fillMaxWidth()) {
-                                    val selectedSlackCount = slackChannels.count { selectedIds.contains(it.id) }
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clickable { isSlackExpanded = !isSlackExpanded }
-                                            .padding(vertical = 8.dp, horizontal = 4.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            DynamicPlatformBadge(platform = "Slack")
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text(
-                                                text = "Slack Odaları (${slackChannels.size})",
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 14.sp,
-                                                color = Color.White
-                                            )
-                                            if (selectedSlackCount > 0) {
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                Surface(
-                                                    shape = RoundedCornerShape(12.dp),
-                                                    color = Color.White.copy(alpha = 0.2f)
-                                                ) {
-                                                    Text(
-                                                        text = "$selectedSlackCount seçili",
-                                                        fontSize = 10.sp,
-                                                        fontWeight = FontWeight.SemiBold,
-                                                        color = Color.White,
-                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                                    )
-                                                }
-                                            }
-                                        }
-                                        Icon(
-                                            imageVector = if (isSlackExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                                            contentDescription = if (isSlackExpanded) "Daralt" else "Genişlet",
-                                            tint = Color.White,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                    }
-
-                                    AnimatedVisibility(
-                                        visible = isSlackExpanded,
-                                        enter = expandVertically() + fadeIn(),
-                                        exit = shrinkVertically() + fadeOut()
-                                    ) {
-                                        Column(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(top = 4.dp, bottom = 8.dp),
-                                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                                        ) {
-                                            slackChannels.forEach { channel ->
-                                                val isSelected = selectedIds.contains(channel.id)
-                                                Surface(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .clickable { viewModel.toggleChannelSelection(channel.id) },
-                                                    shape = RoundedCornerShape(8.dp),
-                                                    color = if (isSelected) Color.White.copy(alpha = 0.25f) else Color.White.copy(alpha = 0.08f),
-                                                    border = androidx.compose.foundation.BorderStroke(
-                                                        width = 1.dp,
-                                                        color = if (isSelected) Color.White else Color.White.copy(alpha = 0.15f)
-                                                    )
-                                                ) {
-                                                    Row(
-                                                        modifier = Modifier
-                                                            .fillMaxWidth()
-                                                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                                                        verticalAlignment = Alignment.CenterVertically
-                                                    ) {
-                                                        Checkbox(
-                                                            checked = isSelected,
-                                                            onCheckedChange = { viewModel.toggleChannelSelection(channel.id) },
-                                                            modifier = Modifier.testTag("checkbox_${channel.id}"),
-                                                            colors = CheckboxDefaults.colors(
-                                                                checkedColor = Color.White,
-                                                                uncheckedColor = Color.White.copy(alpha = 0.6f),
-                                                                checkmarkColor = MaterialTheme.colorScheme.primary
-                                                            )
-                                                        )
-                                                        Spacer(modifier = Modifier.width(8.dp))
-                                                        Column(modifier = Modifier.weight(1f)) {
-                                                            Text(
-                                                                text = channel.name,
-                                                                fontWeight = FontWeight.Bold,
-                                                                fontSize = 14.sp,
-                                                                color = Color.White
-                                                            )
-                                                            Spacer(modifier = Modifier.height(2.dp))
-                                                            Text(
-                                                                text = "Webhook: ${channel.webhookUrl.take(40)}...",
-                                                                fontSize = 11.sp,
-                                                                color = Color.White.copy(alpha = 0.7f)
-                                                            )
-                                                        }
-                                                        DynamicPlatformBadge(platform = channel.platformType)
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
+                                ExpandablePlatformGroup(
+                                    platformName = "Slack",
+                                    channels = slackChannels,
+                                    selectedIds = selectedIds,
+                                    isExpanded = isSlackExpanded,
+                                    onToggleExpand = { isSlackExpanded = !isSlackExpanded },
+                                    onToggleChannel = { viewModel.toggleChannelSelection(it) },
+                                    channelSubtitle = { "Webhook: ${it.webhookUrl.take(40)}..." }
+                                )
                             }
                         }
                     }
@@ -785,10 +587,7 @@ fun BroadcastTab(
         Card(
             modifier = Modifier.fillMaxWidth(),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = Color.White
-            )
+            colors = primaryBroadcastCardColors()
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(
@@ -822,14 +621,7 @@ fun BroadcastTab(
                     shape = RoundedCornerShape(12.dp),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
                     enabled = !uiState.isBroadcasting,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedBorderColor = Color.White,
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.4f),
-                        focusedContainerColor = Color.White.copy(alpha = 0.1f),
-                        unfocusedContainerColor = Color.White.copy(alpha = 0.05f)
-                    )
+                    colors = whiteOnPrimaryTextFieldColors()
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -864,10 +656,7 @@ fun BroadcastTab(
         Card(
             modifier = Modifier.fillMaxWidth(),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = Color.White
-            )
+            colors = primaryBroadcastCardColors()
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(
@@ -944,16 +733,7 @@ fun BroadcastTab(
                                     Icon(Icons.Default.Close, contentDescription = "Kaldır", tint = Color.White)
                                 }
                             },
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                focusedBorderColor = Color.White,
-                                unfocusedBorderColor = Color.White.copy(alpha = 0.4f),
-                                focusedLabelColor = Color.White,
-                                unfocusedLabelColor = Color.White.copy(alpha = 0.7f),
-                                focusedContainerColor = Color.White.copy(alpha = 0.1f),
-                                unfocusedContainerColor = Color.White.copy(alpha = 0.05f)
-                            )
+                            colors = whiteOnPrimaryTextFieldColors()
                         )
 
                         if (uiState.attachmentUrl.startsWith("http")) {
@@ -1091,11 +871,7 @@ fun BroadcastTab(
 
 @Composable
 fun DynamicPlatformBadge(platform: String) {
-    val color = when (platform) {
-        "Telegram" -> Color(0xFF229ED9)
-        "Slack" -> Color(0xFFE01E5A)
-        else -> Color.Gray
-    }
+    val color = PlatformColors.forPlatform(platform)
 
     Surface(
         shape = RoundedCornerShape(6.dp),
@@ -1200,10 +976,7 @@ fun IntegrationTab(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = Color.White
-                )
+                colors = primaryBroadcastCardColors()
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
@@ -1222,11 +995,7 @@ fun IntegrationTab(
                     ) {
                         listOf("Telegram", "Slack").forEach { typ ->
                             val isSel = selectedPlatform == typ
-                            val color = when (typ) {
-                                "Telegram" -> Color(0xFF229ED9)
-                                "Slack" -> Color(0xFFE01E5A)
-                                else -> Color.Gray
-                            }
+                            val color = PlatformColors.forPlatform(typ)
                             
                             OutlinedButton(
                                 onClick = { selectedPlatform = typ },
@@ -1256,16 +1025,7 @@ fun IntegrationTab(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp),
                         singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
-                            focusedBorderColor = Color.White,
-                            unfocusedBorderColor = Color.White.copy(alpha = 0.4f),
-                            focusedContainerColor = Color.White.copy(alpha = 0.1f),
-                            unfocusedContainerColor = Color.White.copy(alpha = 0.05f),
-                            focusedLabelColor = Color.White,
-                            unfocusedLabelColor = Color.White.copy(alpha = 0.7f)
-                        )
+                        colors = whiteOnPrimaryTextFieldColors()
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -1280,16 +1040,7 @@ fun IntegrationTab(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(8.dp),
                             singleLine = true,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                focusedBorderColor = Color.White,
-                                unfocusedBorderColor = Color.White.copy(alpha = 0.4f),
-                                focusedContainerColor = Color.White.copy(alpha = 0.1f),
-                                unfocusedContainerColor = Color.White.copy(alpha = 0.05f),
-                                focusedLabelColor = Color.White,
-                                unfocusedLabelColor = Color.White.copy(alpha = 0.7f)
-                            )
+                            colors = whiteOnPrimaryTextFieldColors()
                         )
 
                         Spacer(modifier = Modifier.height(8.dp))
@@ -1302,16 +1053,7 @@ fun IntegrationTab(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(8.dp),
                             singleLine = true,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                focusedBorderColor = Color.White,
-                                unfocusedBorderColor = Color.White.copy(alpha = 0.4f),
-                                focusedContainerColor = Color.White.copy(alpha = 0.1f),
-                                unfocusedContainerColor = Color.White.copy(alpha = 0.05f),
-                                focusedLabelColor = Color.White,
-                                unfocusedLabelColor = Color.White.copy(alpha = 0.7f)
-                            )
+                            colors = whiteOnPrimaryTextFieldColors()
                         )
 
                         Spacer(modifier = Modifier.height(8.dp))
@@ -1422,16 +1164,7 @@ fun IntegrationTab(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(8.dp),
                             singleLine = true,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                focusedBorderColor = Color.White,
-                                unfocusedBorderColor = Color.White.copy(alpha = 0.4f),
-                                focusedContainerColor = Color.White.copy(alpha = 0.1f),
-                                unfocusedContainerColor = Color.White.copy(alpha = 0.05f),
-                                focusedLabelColor = Color.White,
-                                unfocusedLabelColor = Color.White.copy(alpha = 0.7f)
-                            )
+                            colors = whiteOnPrimaryTextFieldColors()
                         )
                     }
 
@@ -1557,104 +1290,24 @@ fun IntegrationTab(
 
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (telegramSettingsChannels.isNotEmpty()) {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { isTelegramSettingsExpanded = !isTelegramSettingsExpanded }
-                                .padding(vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Surface(
-                                    shape = RoundedCornerShape(4.dp),
-                                    color = Color(0xFF229ED9),
-                                    modifier = Modifier.size(12.dp)
-                                ) {}
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "Telegram Odaları (${telegramSettingsChannels.size})",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Icon(
-                                imageVector = if (isTelegramSettingsExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                                contentDescription = if (isTelegramSettingsExpanded) "Daralt" else "Genişlet",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-
-                        AnimatedVisibility(
-                            visible = isTelegramSettingsExpanded,
-                            enter = expandVertically() + fadeIn(),
-                            exit = shrinkVertically() + fadeOut()
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                verticalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                telegramSettingsChannels.forEach { channel ->
-                                    SavedChannelCard(channel, openEditForm, viewModel)
-                                }
-                            }
-                        }
+                    SettingsExpandablePlatformGroup(
+                        platformName = "Telegram",
+                        channels = telegramSettingsChannels,
+                        isExpanded = isTelegramSettingsExpanded,
+                        onToggleExpand = { isTelegramSettingsExpanded = !isTelegramSettingsExpanded }
+                    ) { channel ->
+                        SavedChannelCard(channel, openEditForm, viewModel)
                     }
                 }
 
                 if (slackSettingsChannels.isNotEmpty()) {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { isSlackSettingsExpanded = !isSlackSettingsExpanded }
-                                .padding(vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Surface(
-                                    shape = RoundedCornerShape(4.dp),
-                                    color = Color(0xFFE01E5A),
-                                    modifier = Modifier.size(12.dp)
-                                ) {}
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "Slack Odaları (${slackSettingsChannels.size})",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Icon(
-                                imageVector = if (isSlackSettingsExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                                contentDescription = if (isSlackSettingsExpanded) "Daralt" else "Genişlet",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-
-                        AnimatedVisibility(
-                            visible = isSlackSettingsExpanded,
-                            enter = expandVertically() + fadeIn(),
-                            exit = shrinkVertically() + fadeOut()
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                verticalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                slackSettingsChannels.forEach { channel ->
-                                    SavedChannelCard(channel, openEditForm, viewModel)
-                                }
-                            }
-                        }
+                    SettingsExpandablePlatformGroup(
+                        platformName = "Slack",
+                        channels = slackSettingsChannels,
+                        isExpanded = isSlackSettingsExpanded,
+                        onToggleExpand = { isSlackSettingsExpanded = !isSlackSettingsExpanded }
+                    ) { channel ->
+                        SavedChannelCard(channel, openEditForm, viewModel)
                     }
                 }
             }
@@ -1671,10 +1324,7 @@ fun SavedChannelCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = Color.White
-        )
+        colors = primaryBroadcastCardColors()
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Row(
@@ -1686,7 +1336,7 @@ fun SavedChannelCard(
                     val color = when (channel.platformType) {
                         "Telegram" -> Color(0xFF80DEEA)
                         "Slack" -> Color(0xFFF48FB1)
-                        else -> Color.White.copy(alpha = 0.5f)
+                        else -> PlatformColors.Default.copy(alpha = 0.5f)
                     }
                     Surface(
                         shape = RoundedCornerShape(4.dp),
