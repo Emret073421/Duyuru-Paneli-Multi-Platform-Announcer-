@@ -153,16 +153,15 @@ class AnnouncementViewModel(private val repository: AnnouncementRepository) : Vi
         }
     }
 
-    // Test specific integration segment before saving
-    fun testTelegramConnection(token: String, chatId: String) {
+    private fun testConnection(platformLabel: String, call: suspend () -> ServiceResult) {
         _uiState.update { it.copy(isTesting = true, testResult = null) }
         viewModelScope.launch {
-            val res = repository.testTelegram(token, chatId)
+            val res = call()
             _uiState.update { state ->
                 state.copy(
                     isTesting = false,
                     testResult = when (res) {
-                        is ServiceResult.Success -> "Telegram Test Başarılı!"
+                        is ServiceResult.Success -> "$platformLabel Test Başarılı!"
                         is ServiceResult.Failure -> "Hata: ${res.error}"
                     }
                 )
@@ -170,20 +169,12 @@ class AnnouncementViewModel(private val repository: AnnouncementRepository) : Vi
         }
     }
 
+    fun testTelegramConnection(token: String, chatId: String) {
+        testConnection("Telegram") { repository.testTelegram(token, chatId) }
+    }
+
     fun testSlackConnection(webhookUrl: String) {
-        _uiState.update { it.copy(isTesting = true, testResult = null) }
-        viewModelScope.launch {
-            val res = repository.testSlack(webhookUrl)
-            _uiState.update { state ->
-                state.copy(
-                    isTesting = false,
-                    testResult = when (res) {
-                        is ServiceResult.Success -> "Slack Test Başarılı!"
-                        is ServiceResult.Failure -> "Hata: ${res.error}"
-                    }
-                )
-            }
-        }
+        testConnection("Slack") { repository.testSlack(webhookUrl) }
     }
 
     fun clearTestResult() {
