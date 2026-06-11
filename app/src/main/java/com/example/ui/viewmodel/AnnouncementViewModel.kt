@@ -10,6 +10,7 @@ import com.example.data.api.ServiceResult
 import com.example.data.database.AnnouncementEntity
 import com.example.data.database.ChannelEntity
 import com.example.data.repository.AnnouncementRepository
+import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -35,7 +36,10 @@ data class BroadcastUiState(
     
     // Test bağlantısı durumları
     val isTesting: Boolean = false,
-    val testResult: String? = null
+    val testResult: String? = null,
+
+    // Genel hata durumu (DB işlemleri, beklenmeyen hatalar vb.)
+    val errorMessage: String? = null
 )
 
 class AnnouncementViewModel(private val repository: AnnouncementRepository) : ViewModel() {
@@ -128,28 +132,48 @@ class AnnouncementViewModel(private val repository: AnnouncementRepository) : Vi
     // CRUD: Add or update a channel
     fun saveChannel(channel: ChannelEntity) {
         viewModelScope.launch {
-            repository.saveChannel(channel)
+            try {
+                repository.saveChannel(channel)
+            } catch (e: Exception) {
+                Log.e(TAG, "saveChannel failed", e)
+                _uiState.update { it.copy(errorMessage = "Kanal kaydedilemedi: ${e.localizedMessage}") }
+            }
         }
     }
 
     // Toggle active switch of channel
     fun toggleChannelEnabled(channel: ChannelEntity) {
         viewModelScope.launch {
-            repository.saveChannel(channel.copy(isEnabled = !channel.isEnabled))
+            try {
+                repository.saveChannel(channel.copy(isEnabled = !channel.isEnabled))
+            } catch (e: Exception) {
+                Log.e(TAG, "toggleChannelEnabled failed", e)
+                _uiState.update { it.copy(errorMessage = "Kanal durumu değiştirilemedi: ${e.localizedMessage}") }
+            }
         }
     }
 
     // CRUD: Delete channel
     fun deleteChannel(channel: ChannelEntity) {
         viewModelScope.launch {
-            repository.deleteChannel(channel)
+            try {
+                repository.deleteChannel(channel)
+            } catch (e: Exception) {
+                Log.e(TAG, "deleteChannel failed", e)
+                _uiState.update { it.copy(errorMessage = "Kanal silinemedi: ${e.localizedMessage}") }
+            }
         }
     }
 
     // Clear history logs
     fun clearHistory() {
         viewModelScope.launch {
-            repository.clearHistory()
+            try {
+                repository.clearHistory()
+            } catch (e: Exception) {
+                Log.e(TAG, "clearHistory failed", e)
+                _uiState.update { it.copy(errorMessage = "Geçmiş temizlenemedi: ${e.localizedMessage}") }
+            }
         }
     }
 
@@ -157,15 +181,20 @@ class AnnouncementViewModel(private val repository: AnnouncementRepository) : Vi
     fun testTelegramConnection(token: String, chatId: String) {
         _uiState.update { it.copy(isTesting = true, testResult = null) }
         viewModelScope.launch {
-            val res = repository.testTelegram(token, chatId)
-            _uiState.update { state ->
-                state.copy(
-                    isTesting = false,
-                    testResult = when (res) {
-                        is ServiceResult.Success -> "Telegram Test Başarılı!"
-                        is ServiceResult.Failure -> "Hata: ${res.error}"
-                    }
-                )
+            try {
+                val res = repository.testTelegram(token, chatId)
+                _uiState.update { state ->
+                    state.copy(
+                        isTesting = false,
+                        testResult = when (res) {
+                            is ServiceResult.Success -> "Telegram Test Başarılı!"
+                            is ServiceResult.Failure -> "Hata: ${res.error}"
+                        }
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "testTelegramConnection failed", e)
+                _uiState.update { it.copy(isTesting = false, testResult = "Beklenmeyen hata: ${e.localizedMessage}") }
             }
         }
     }
@@ -173,15 +202,20 @@ class AnnouncementViewModel(private val repository: AnnouncementRepository) : Vi
     fun testSlackConnection(webhookUrl: String) {
         _uiState.update { it.copy(isTesting = true, testResult = null) }
         viewModelScope.launch {
-            val res = repository.testSlack(webhookUrl)
-            _uiState.update { state ->
-                state.copy(
-                    isTesting = false,
-                    testResult = when (res) {
-                        is ServiceResult.Success -> "Slack Test Başarılı!"
-                        is ServiceResult.Failure -> "Hata: ${res.error}"
-                    }
-                )
+            try {
+                val res = repository.testSlack(webhookUrl)
+                _uiState.update { state ->
+                    state.copy(
+                        isTesting = false,
+                        testResult = when (res) {
+                            is ServiceResult.Success -> "Slack Test Başarılı!"
+                            is ServiceResult.Failure -> "Hata: ${res.error}"
+                        }
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "testSlackConnection failed", e)
+                _uiState.update { it.copy(isTesting = false, testResult = "Beklenmeyen hata: ${e.localizedMessage}") }
             }
         }
     }
@@ -215,32 +249,55 @@ class AnnouncementViewModel(private val repository: AnnouncementRepository) : Vi
         _uiState.update { it.copy(isBroadcasting = true, broadcastSuccess = null, broadcastResultMessage = "") }
 
         viewModelScope.launch {
-            val log = repository.broadcastAnnouncement(
-                message = text, 
-                selectedChannels = targets,
-                photoUrl = photoUrl,
-                photoBytes = photoBytes
-            )
-            
-            val isAllSuccessful = !log.resultSummary.contains("Başarısız")
-            
-            _uiState.update {
-                it.copy(
-                    isBroadcasting = false,
-                    broadcastSuccess = isAllSuccessful,
-                    broadcastResultMessage = log.resultSummary,
-                    // Eğer tamamen başarılıysa girdileri sıfırla, hata varsa kullanıcının düzenlemesi için koru
-                    announcementText = if (isAllSuccessful) "" else text,
-                    attachmentUrl = if (isAllSuccessful) "" else it.attachmentUrl,
-                    attachmentBytes = if (isAllSuccessful) null else it.attachmentBytes,
-                    attachmentUriString = if (isAllSuccessful) null else it.attachmentUriString
+            try {
+                val log = repository.broadcastAnnouncement(
+                    message = text, 
+                    selectedChannels = targets,
+                    photoUrl = photoUrl,
+                    photoBytes = photoBytes
                 )
+                
+                val isAllSuccessful = !log.resultSummary.contains("Başarısız")
+                
+                _uiState.update {
+                    it.copy(
+                        isBroadcasting = false,
+                        broadcastSuccess = isAllSuccessful,
+                        broadcastResultMessage = log.resultSummary,
+                        // Eğer tamamen başarılıysa girdileri sıfırla, hata varsa kullanıcının düzenlemesi için koru
+                        announcementText = if (isAllSuccessful) "" else text,
+                        attachmentUrl = if (isAllSuccessful) "" else it.attachmentUrl,
+                        attachmentBytes = if (isAllSuccessful) null else it.attachmentBytes,
+                        attachmentUriString = if (isAllSuccessful) null else it.attachmentUriString
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "broadcastAnnouncement failed", e)
+                _uiState.update {
+                    it.copy(
+                        isBroadcasting = false,
+                        broadcastSuccess = false,
+                        broadcastResultMessage = "Duyuru gönderilemedi: ${e.localizedMessage}"
+                    )
+                }
             }
         }
     }
 
     fun dismissBroadcastResult() {
         _uiState.update { it.copy(broadcastSuccess = null, broadcastResultMessage = "") }
+    }
+
+    fun onImageLoadError(message: String) {
+        _uiState.update { it.copy(errorMessage = "Görsel yüklenemedi: $message") }
+    }
+
+    fun dismissError() {
+        _uiState.update { it.copy(errorMessage = null) }
+    }
+
+    companion object {
+        private const val TAG = "AnnouncementViewModel"
     }
 }
 

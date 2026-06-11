@@ -199,6 +199,55 @@ fun MainAppScreen(viewModel: AnnouncementViewModel, modifier: Modifier = Modifie
             }
         }
     }
+
+    // Genel hata mesajı diyaloğu (DB hataları, görsel yükleme hataları vb.)
+    uiState.errorMessage?.let { errorMsg ->
+        Dialog(onDismissRequest = { viewModel.dismissError() }) {
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = "Hata",
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(48.dp)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "Hata",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = errorMsg,
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Start,
+                        lineHeight = 20.sp,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = { viewModel.dismissError() },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Tamam", color = MaterialTheme.colorScheme.onError)
+                    }
+                }
+            }
+        }
+    }
 }
 }
 
@@ -375,12 +424,23 @@ fun BroadcastTab(
         uri?.let {
             try {
                 // Seçilen yerel görselin akışını (InputStream) açıp byte dizisine döküyoruz
-                context.contentResolver.openInputStream(it)?.use { inputStream ->
-                    val bytes = inputStream.readBytes()
-                    viewModel.setLocalAttachment(it.toString(), bytes)
+                val stream = context.contentResolver.openInputStream(it)
+                if (stream != null) {
+                    stream.use { inputStream ->
+                        val bytes = inputStream.readBytes()
+                        viewModel.setLocalAttachment(it.toString(), bytes)
+                    }
+                } else {
+                    viewModel.onImageLoadError("Dosya akışı açılamadı (null InputStream)")
                 }
+            } catch (e: SecurityException) {
+                viewModel.onImageLoadError("Dosya erişim izni reddedildi: ${e.localizedMessage}")
+            } catch (e: java.io.IOException) {
+                viewModel.onImageLoadError("Dosya okuma hatası: ${e.localizedMessage}")
+            } catch (e: OutOfMemoryError) {
+                viewModel.onImageLoadError("Görsel çok büyük, bellek yetersiz")
             } catch (e: Exception) {
-                e.printStackTrace()
+                viewModel.onImageLoadError(e.localizedMessage ?: "Bilinmeyen hata")
             }
         }
     }
